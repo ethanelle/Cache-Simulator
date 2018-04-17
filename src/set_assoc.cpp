@@ -10,6 +10,10 @@ struct Assoc_Entry {
 	time_t timestamp;
 };
 
+/*
+	Similar to the direct map cache, this cache now has multiple entries for each
+	index in the cache. This allows for better accuracy with high repetition.
+*/
 void set_assoc(std::vector<std::string> list, std::fstream &outFile)
 {
 	std::cout << "\nActual:\t\t";

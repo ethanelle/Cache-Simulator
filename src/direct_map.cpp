@@ -35,14 +35,7 @@ void direct_mapped(std::vector<std::string> list, std::fstream &outFile)
 		#endif
 		
 		Direct_Entry cache[cacheSize];
-	
-		for(int j = 0; j < cacheSize; j++)
-		{
-			e = &(cache[j]);
-			e->valid = 0;
-			e->tag = 0;
-		}
-	
+
 		tag_shift = 10;
 		total = hit = 0;
 		for(it = list.begin(); it != list.end(); it++)

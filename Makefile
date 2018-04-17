@@ -1,5 +1,5 @@
-all: src/project2.cpp src/set_assoc.cpp src/direct_map.cpp
-	g++ src/set_assoc.cpp src/direct_map.cpp src/project2.cpp -g -o project2
+all: src/project2.cpp src/set_assoc.cpp src/direct_map.cpp src/full_assoc.cpp
+	g++ src/set_assoc.cpp src/direct_map.cpp src/full_assoc.cpp src/project2.cpp -g -o project2
 	
 run: clean all
 	./project2 traces/trace1.txt output.txt

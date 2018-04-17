@@ -6,6 +6,7 @@
 
 extern void set_assoc(std::vector<std::string> list, std::fstream &outFile);
 extern void direct_mapped(std::vector<std::string> list, std::fstream &outFile);
+extern void full_assoc(std::vector<std::string> list, std::fstream &outFile);
 
 int main(int arc, char const* argv[])
 {
@@ -28,6 +29,7 @@ int main(int arc, char const* argv[])
 	
 	direct_mapped(list, outFile);
 	set_assoc(list, outFile);
+	full_assoc(list, outFile);
 	
 	/* end tests */
 	
