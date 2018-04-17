@@ -14,10 +14,12 @@ void set_assoc(std::vector<std::string> list, std::fstream &outFile)
 {
 	std::cout << "\nActual:\t\t";
 	int total, hit;
-	unsigned int cacheSize, cacheAssoc, index, tag, addr;
-	unsigned int offset_mask = 0x00000003;
-	unsigned int index_mask  = 0x00001ffc;
-	unsigned int tag_mask    = (0xffffffff - index_mask) - offset_mask;
+	unsigned int cacheSize, cacheAssoc, index, tag, addr, offset_mask, index_mask, tag_mask, tag_shift;
+	offset_mask = 0x00000003;
+	index_mask  = 0x00001ffc;
+	tag_mask    = (0xffffffff - index_mask) - offset_mask;
+	tag_shift   = 13;
+	
 	Assoc_Entry *e;
 	
 	std::string tmp;
@@ -47,7 +49,7 @@ void set_assoc(std::vector<std::string> list, std::fstream &outFile)
 			addr = std::stoul(tmp.substr(2), nullptr, 16);
 			index = addr & index_mask;
 			index %= cacheSize;
-			tag = addr & tag_mask;
+			tag = (addr & tag_mask) >> tag_shift;
 
 			int i;
 			bool found = false;
@@ -93,11 +95,18 @@ void set_assoc(std::vector<std::string> list, std::fstream &outFile)
 		cacheSize /= 2;
 		
 		if(cacheAssoc == 4)
+		{
 			index_mask = 0xffc;
-		else if(cacheAssoc == 8)
+			tag_shift = 12;
+		}else if(cacheAssoc == 8)
+		{
 			index_mask = 0x7fc;
-		else if(cacheAssoc == 16)
+			tag_shift = 11;
+		}else if(cacheAssoc == 16)
+		{
+			tag_shift = 10;
 			index_mask = 0x3fc;
+		}
 		
 		tag_mask = (0xffffffff - index_mask) - offset_mask;
 		
