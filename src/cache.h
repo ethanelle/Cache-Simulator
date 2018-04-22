@@ -13,6 +13,8 @@ private:
 	int set_assoc(int);
 	int assoc_sizer(int);
 	int full_assoc_LRU();
+	int full_assoc_HC();
+	int set_assoc_write_miss(int);
 public:
 	Cache(std::vector<std::string>, std::string);
 	~Cache();

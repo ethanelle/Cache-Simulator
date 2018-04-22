@@ -1,5 +1,5 @@
-all: class/cache.cpp class/cache.h class/project2.cpp
-	g++ class/cache.cpp class/project2.cpp -g -std=c++14 -o project2
+all: src/cache.cpp src/cache.h src/project2.cpp
+	g++ src/cache.cpp src/project2.cpp -g -std=c++14 -o project2
 
 run: clean all
 	./project2 traces/trace1.txt output.txt
