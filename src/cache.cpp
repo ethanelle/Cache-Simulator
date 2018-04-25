@@ -7,11 +7,13 @@
 #include <ctime>
 #include <chrono>
 
-struct Entry {
-	int valid;
-	int lowBound;
-	int highBound;
-};
+#define DIRECTMAP 1
+#define SETASSOC 1
+#define FULLYASSOC 1
+#define WRITEMISS 1
+#define PREFETCH 1
+#define PREFETCHMISS 1
+#define EXTRA 0
 
 struct LRU_Entry {
 	int valid;
@@ -42,22 +44,23 @@ void Cache::run_sim()
 {
 	int total = this->list.size();
 	int hit;
-#if 1
-	/* DIRECT MAP */
+	int cacheSize, cacheAssoc;
+
+#if DIRECTMAP
 	std::cout << "ACTUAL:\t\t";
-	int cacheSize = 1024;
-	while(cacheSize <= 32768)
+	cacheSize = 32;
+	while(cacheSize <= 1024)
 	{
-		hit = direct_map(cacheSize / 32);
+		hit = direct_map(cacheSize);
 		std::cout << hit << "," << total << "; ";
 		this->outFile << hit << "," << total << "; ";
 
-		if(cacheSize == 1024)
-			cacheSize = 4096;
-		else if(cacheSize == 4096)
-			cacheSize = 16384;
-		else if(cacheSize == 16384)
-			cacheSize = 32768;
+		if(cacheSize == 32)
+			cacheSize = 128;
+		else if(cacheSize == 128)
+			cacheSize = 512;
+		else if(cacheSize == 512)
+			cacheSize = 1024;
 		else
 		{
 			std::cout << std::endl;
@@ -66,9 +69,10 @@ void Cache::run_sim()
 		}
 	}
 	std::cout << "DESIRED:\t837589,1122102; 932528,1122102; 972661,1122102; 1005547,1122102;" << std::endl;
-	
+#endif
+#if SETASSOC
 	std::cout << "\nACTUAL:\t\t";
-	int cacheAssoc = 2;
+	cacheAssoc = 2;
 	while(cacheAssoc <= 16)
 	{
 		hit = set_assoc(cacheAssoc);
@@ -84,7 +88,8 @@ void Cache::run_sim()
 		}
 	}
 	std::cout << "DESIRED:\t993999,1122102; 999852,1122102; 999315,1122102; 1000092,1122102;" << std::endl;
-
+#endif
+#if FULLYASSOC
 	std::cout << "\nACTUAL:\t\t";
 	hit = full_assoc_LRU();
 	std::cout << hit << "," << total << ";" << std::endl;
@@ -97,6 +102,7 @@ void Cache::run_sim()
 	this->outFile << hit << "," << total << ";" << std::endl;
 	std::cout << "DESIRED:\t998466,1122102;" << std::endl;
 #endif
+#if WRITEMISS
 	std::cout << "\nACTUAL:\t\t";
 	cacheAssoc = 2;
 	while(cacheAssoc <= 16)
@@ -114,12 +120,57 @@ void Cache::run_sim()
 		}
 	}
 	std::cout << "DESIRED:\t991430,1122102; 996265,1122102; 996942,1122102; 997995,1122102;" << std::endl;
+#endif
+#if PREFETCH
+	std::cout << "\nACTUAL:\t\t";
+	cacheAssoc = 2;
+	while(cacheAssoc <= 16)
+	{
+		hit = set_assoc_prefetch(cacheAssoc);
+		std::cout << hit << "," << total << "; ";
+		this->outFile << hit << "," << total << "; ";
+
+		cacheAssoc *= 2;
+		if(cacheAssoc > 16)
+		{
+			std::cout << std::endl;
+			this->outFile << std::endl;
+			break;
+		}
+	}
+	std::cout << "DESIRED:\t996682,1122102; 1001716,1122102; 1002738,1122102; 1003417,1122102;" << std::endl;
+#endif
+#if PREFETCHMISS
+	std::cout << "\nACTUAL:\t\t";
+	cacheAssoc = 2;
+	while(cacheAssoc <= 16)
+	{
+		hit = set_assoc_prefetch_miss(cacheAssoc);
+		std::cout << hit << "," << total << "; ";
+		this->outFile << hit << "," << total << "; ";
+
+		cacheAssoc *= 2;
+		if(cacheAssoc > 16)
+		{
+			std::cout << std::endl;
+			this->outFile << std::endl;
+			break;
+		}
+	}
+	std::cout << "DESIRED:\t992669,1122102; 998384,1122102; 999371,1122102; 1000391,1122102;" << std::endl;
+#endif
+#if EXTRA
+	hit = set_assoc_shallow();
+	std::cout << hit << "," << total << ";" << std::endl;
+	this->outFile << hit << "," << total << ";" << std::endl;
+#endif
 }
 
 int Cache::direct_map(int cacheSize)
 {
-	Entry cache[cacheSize] = {0};
+	LRU_Entry cache[cacheSize] = {0};
 	std::vector<std::string>::iterator it;
+
 	int hit = 0;
 	for(it = this->list.begin(); it != this->list.end(); it++)
 	{
@@ -127,22 +178,21 @@ int Cache::direct_map(int cacheSize)
 		int addr = std::stoul(tmp.substr(2), nullptr, 16);
 		int index = std::floor(addr / 32);
 		index %= cacheSize;
+
 		if(cache[index].valid == 1)
 		{
-			if((cache[index].lowBound <= addr) && (cache[index].highBound >= addr))
+			if((cache[index].lowBound <= addr) && (cache[index].highBound <= addr))
 				hit++;
 			else
 			{
 				cache[index].lowBound = std::floor(addr / 32) * 32;
 				cache[index].highBound = cache[index].lowBound + 31;
-				cache[index].valid = 1;
 			}
 		}else
 		{
+			cache[index].valid = 1;
 			cache[index].lowBound = std::floor(addr / 32) * 32;
 			cache[index].highBound = cache[index].lowBound + 31;
-			cache[index].valid = 1;
-			hit++;
 		}
 	}
 	return hit;
@@ -370,4 +420,201 @@ int Cache::set_assoc_write_miss(int cacheAssoc)
 		}
 	}
 	return hit;
+}
+
+int Cache::set_assoc_prefetch(int cacheAssoc)
+{
+	int cacheSize = assoc_sizer(cacheAssoc);
+
+	LRU_Entry cache[cacheSize][cacheAssoc] = {0};
+	std::vector<std::string>::iterator it;
+	int hit = 0;
+	for(it = this->list.begin(); it != this->list.end(); it++)
+	{
+		std::string tmp = *it;
+		int addr = std::stoul(tmp.substr(2), nullptr, 16);
+		int index = std::floor(addr / 32);
+		index %= cacheSize;
+
+		bool found = false;
+		for(int i = 0; i < cacheAssoc; i++)
+		{
+			if(cache[index][i].valid == 1)
+			{
+				if((cache[index][i].lowBound <= addr) && (cache[index][i].highBound >= addr))
+				{
+					hit++;
+					cache[index][i].timestamp = std::chrono::high_resolution_clock::now();
+					found = true;
+					break;
+				}
+			}else if(cache[index][i].valid == 0)
+			{
+				cache[index][i].lowBound = std::floor(addr / 32) * 32;
+				cache[index][i].highBound = cache[index][i].lowBound + 31;
+				cache[index][i].valid = 1;
+				cache[index][i].timestamp = std::chrono::high_resolution_clock::now();
+				found = true;
+				break;
+			}
+		}
+		if(!found)
+		{
+			int oldest = 0;
+			for(int i = 1; i < cacheAssoc; i++)
+			{
+				if(cache[index][oldest].timestamp > cache[index][i].timestamp)
+					oldest = i;
+			}
+			cache[index][oldest].lowBound = std::floor(addr / 32) * 32;
+			cache[index][oldest].highBound = cache[index][oldest].lowBound + 31;
+			cache[index][oldest].valid = 1;
+			cache[index][oldest].timestamp = std::chrono::high_resolution_clock::now();
+		}
+
+		/* PREFETCH */
+		addr += 32;
+		index = std::floor(addr / 32);
+		index %= cacheSize;
+
+		found = false;
+		for(int i = 0; i < cacheAssoc; i++)
+		{
+			if(cache[index][i].valid == 1)
+			{
+				if((cache[index][i].lowBound <= addr) && (cache[index][i].highBound >= addr))
+				{
+					cache[index][i].timestamp = std::chrono::high_resolution_clock::now();
+					found = true;
+					break;
+				}
+			}else if(cache[index][i].valid == 0)
+			{
+				cache[index][i].lowBound = std::floor(addr / 32) * 32;
+				cache[index][i].highBound = cache[index][i].lowBound + 31;
+				cache[index][i].valid = 1;
+				cache[index][i].timestamp = std::chrono::high_resolution_clock::now();
+				found = true;
+				break;
+			}
+		}
+		if(!found)
+		{
+			int oldest = 0;
+			for(int i = 1; i < cacheAssoc; i++)
+			{
+				if(cache[index][oldest].timestamp > cache[index][i].timestamp)
+					oldest = i;
+			}
+			cache[index][oldest].lowBound = std::floor(addr / 32) * 32;
+			cache[index][oldest].highBound = cache[index][oldest].lowBound + 31;
+			cache[index][oldest].valid = 1;
+			cache[index][oldest].timestamp = std::chrono::high_resolution_clock::now();
+		}
+	}
+	return hit;
+}
+
+int Cache::set_assoc_prefetch_miss(int cacheAssoc)
+{
+	int cacheSize = assoc_sizer(cacheAssoc);
+
+	LRU_Entry cache[cacheSize][cacheAssoc] = {0};
+	std::vector<std::string>::iterator it;
+	int hit = 0;
+	for(it = this->list.begin(); it != this->list.end(); it++)
+	{
+		std::string tmp = *it;
+		int addr = std::stoul(tmp.substr(2), nullptr, 16);
+		int index = std::floor(addr / 32);
+		index %= cacheSize;
+
+		bool found = false;
+		bool miss = false;
+		for(int i = 0; i < cacheAssoc; i++)
+		{
+			if(cache[index][i].valid == 1)
+			{
+				if((cache[index][i].lowBound <= addr) && (cache[index][i].highBound >= addr))
+				{
+					hit++;
+					cache[index][i].timestamp = std::chrono::high_resolution_clock::now();
+					found = true;
+					break;
+				}
+			}else if(cache[index][i].valid == 0)
+			{
+				cache[index][i].lowBound = std::floor(addr / 32) * 32;
+				cache[index][i].highBound = cache[index][i].lowBound + 31;
+				cache[index][i].valid = 1;
+				cache[index][i].timestamp = std::chrono::high_resolution_clock::now();
+				found = true;
+				miss = true;
+				break;
+			}
+		}
+		if(!found)
+		{
+			int oldest = 0;
+			for(int i = 1; i < cacheAssoc; i++)
+			{
+				if(cache[index][oldest].timestamp > cache[index][i].timestamp)
+					oldest = i;
+			}
+			cache[index][oldest].lowBound = std::floor(addr / 32) * 32;
+			cache[index][oldest].highBound = cache[index][oldest].lowBound + 31;
+			cache[index][oldest].valid = 1;
+			cache[index][oldest].timestamp = std::chrono::high_resolution_clock::now();
+			miss = true;
+		}
+
+		/* PREFECT */
+		if(miss)
+		{
+			addr += 32;
+			index = std::floor(addr / 32);
+			index %= cacheSize;
+
+			found = false;
+			for(int i = 0; i < cacheAssoc; i++)
+			{
+				if(cache[index][i].valid == 1)
+				{
+					if((cache[index][i].lowBound <= addr) && (cache[index][i].highBound >= addr))
+					{
+						cache[index][i].timestamp = std::chrono::high_resolution_clock::now();
+						found = true;
+						break;
+					}
+				}else if(cache[index][i].valid == 0)
+				{
+					cache[index][i].lowBound = std::floor(addr / 32) * 32;
+					cache[index][i].highBound = cache[index][i].lowBound + 31;
+					cache[index][i].valid = 1;
+					cache[index][i].timestamp = std::chrono::high_resolution_clock::now();
+					found = true;
+					break;
+				}
+			}
+			if(!found)
+			{
+				int oldest = 0;
+				for(int i = 1; i < cacheAssoc; i++)
+				{
+					if(cache[index][oldest].timestamp > cache[index][i].timestamp)
+						oldest = i;
+				}
+				cache[index][oldest].lowBound = std::floor(addr / 32) * 32;
+				cache[index][oldest].highBound = cache[index][oldest].lowBound + 31;
+				cache[index][oldest].valid = 1;
+				cache[index][oldest].timestamp = std::chrono::high_resolution_clock::now();
+			}
+		}
+	}
+	return hit;
+}
+
+int Cache::set_assoc_shallow()
+{
+	
 }

@@ -15,6 +15,9 @@ private:
 	int full_assoc_LRU();
 	int full_assoc_HC();
 	int set_assoc_write_miss(int);
+	int set_assoc_prefetch(int);
+	int set_assoc_prefetch_miss(int);
+	int set_assoc_shallow();
 public:
 	Cache(std::vector<std::string>, std::string);
 	~Cache();
