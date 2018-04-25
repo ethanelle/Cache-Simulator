@@ -181,7 +181,7 @@ int Cache::direct_map(int cacheSize)
 
 		if(cache[index].valid == 1)
 		{
-			if((cache[index].lowBound <= addr) && (cache[index].highBound <= addr))
+			if((cache[index].lowBound <= addr) && (cache[index].highBound >= addr))
 				hit++;
 			else
 			{
