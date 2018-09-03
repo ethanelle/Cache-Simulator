@@ -1,13 +1,13 @@
-all: src/cache.cpp src/cache.h src/project2.cpp
-	g++ src/cache.cpp src/project2.cpp -g -std=c++14 -o project2
+all: src/cache.cpp src/cache.h src/driver.cpp
+	g++ src/cache.cpp src/driver.cpp -g -std=c++14 -o driver
 
 run: clean all
-	./project2 traces/trace1.txt output.txt
+	./driver traces/trace1.txt output.txt
 	
 checkmem: all
-	valgrind ./project2 traces/trace1.txt output.txt
+	valgrind ./driver traces/trace1.txt output.txt
 
 clean:
 	rm -rf *.o
-	rm -rf project2
+	rm -rf driver
 	rm -rf output.txt

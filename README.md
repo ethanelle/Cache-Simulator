@@ -1,4 +1,4 @@
-# CS 320 Project 2
+# Cache Simulator
 
 This project is a cache simulator. The simulator reads a text file as a command line argument and outputs the result to a text file specified by the second command line argument. The simulator simulates 6 different designs with variables within some of the designs. More information regarding the specifics of the designs can be found below in "Cache Designs." Please note that the cache line is 32 bytes throughout this entire project.
 
@@ -7,7 +7,7 @@ This project is a cache simulator. The simulator reads a text file as a command 
 ### Files
 * Makefile
 * src
-  * project2.cpp : a driver file to create a simulator and run it
+  * driver.cpp : a driver file to create a simulator and run it
   * cache.h : the header file for the Cache class
   * cache.cpp : the implementation for the Cache class containing all functioning code
 * traces : a folder containing 3 example traces to test the simulator with
@@ -26,7 +26,7 @@ make run
 ```
 To run after compiling:
 ```
-./project2 trace_file.txt output.txt
+./driver trace_file.txt output.txt
 ```
 
 ### Cache Designs
